@@ -5,7 +5,7 @@ import gdown
 import pandas as pd
 from flask import Flask, request, jsonify
 
-app = Flask(__name__)
+apps = Flask(__name__)
 
 MODEL_ZIP_NAME = "C:\\Users\\Lenovo\\OneDrive\\Desktop\\lung_cancer_survival\\models\\lung_cancer_model.zip"
 MODEL_FILE_NAME = "C:\\Users\\Lenovo\\OneDrive\\Desktop\\lung_cancer_survival\\models\\lung_cancer_model.pkl"
@@ -45,3 +45,4 @@ def predict():
 
 if __name__ == '__main__':
     app.run(debug=True)
+

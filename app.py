@@ -3,17 +3,17 @@ import zipfile
 import os
 import joblib
 
-# Download the ZIP from Google Drive if not already present
-if not os.path.exists("lung_cancer_model.pkl"):
-    gdown.download(id="1k20qTxGm1ad_gZb5ev_NlKv4ZMQ6Ko2J", output="lung_cancer_model.zip", quiet=False)
+# Step 1: Download model zip file
+file_id = "1k20qTxGm1ad_gZb5ev_NlKv4ZMQ6Ko2J"
+url = f"https://drive.google.com/uc?id={file_id}"
 
-    # Unzip the file
-    with zipfile.ZipFile("lung_cancer_model.zip", "r") as zip_ref:
+if not os.path.exists("lung_cancer_model.pkl"):
+    gdown.download(url, "model.zip", quiet=False)
+    with zipfile.ZipFile("model.zip", 'r') as zip_ref:
         zip_ref.extractall()
 
-# Load the model
+# Step 2: Load the model
 model = joblib.load("lung_cancer_model.pkl")
-
 
 
 

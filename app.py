@@ -1,35 +1,53 @@
-import os
+import streamlit as st
 import pandas as pd
-import joblib
+import pickle
+import os
+import tarfile
 import gdown
-from flask import Flask, request, render_template
 
-app = Flask(__name__)
+# STEP 1: Download the model from Google Drive
+MODEL_URL = "https://drive.google.com/uc?id=1k20qTxGm1ad_gZb5ev_NlKv4ZMQ6Ko2J"
+MODEL_TAR = "model.tar.gz"
+MODEL_PATH = "lung_cancer_model.pkl"
 
-# === Load the model from Google Drive if not present ===
-model_path = "lung_cancer_model.pkl"
-gdrive_id = "1k20qTxGm1ad_gZb5ev_NlKv4ZMQ6Ko2J"
-if not os.path.exists(model_path):
-    print("Downloading model from Google Drive...")
-    gdown.download(f"https://drive.google.com/uc?id={gdrive_id}", model_path, quiet=False)
+@st.cache_resource
+def download_and_extract_model():
+    if not os.path.exists(MODEL_PATH):
+        st.info("Downloading model from Google Drive...")
+        gdown.download(MODEL_URL, MODEL_TAR, quiet=False)
+        with tarfile.open(MODEL_TAR, "r:gz") as tar:
+            tar.extractall()
+        st.success("Model downloaded and extracted.")
+    with open(MODEL_PATH, "rb") as f:
+        return pickle.load(f)
 
-# === Load model ===
-model = joblib.load(model_path)
+model = download_and_extract_model()
 
-@app.route('/')
-def home():
-    return render_template('index.html')
+# UI
+st.title("🫁 Lung Cancer Survival Prediction")
 
-@app.route('/predict', methods=['POST'])
-def predict():
-    try:
-        features = [float(x) for x in request.form.values()]
-        final_features = [features]
-        prediction = model.predict(final_features)
-        output = round(prediction[0], 2)
-        return render_template('index.html', prediction_text=f'Survival Prediction Score: {output}')
-    except Exception as e:
-        return render_template('index.html', prediction_text=f'Error: {e}')
+age = st.number_input("Age", 0, 120)
+gender = st.selectbox("Gender", ["Male", "Female"])
+country = st.text_input("Country")
+diagnosis_date = st.date_input("Diagnosis Date")
+cancer_stage = st.selectbox("Cancer Stage", ["Stage I", "Stage II", "Stage III", "Stage IV"])
+lifestyle = st.selectbox("Lifestyle", ["Active", "Sedentary"])
+comorbidities = st.text_input("Comorbidities")
+treatment = st.selectbox("Treatment", ["Surgery", "Chemotherapy", "Radiation", "Combination", "None"])
 
-if __name__ == "__main__":
-    app.run(debug=True)
+if st.button("Predict Survival"):
+    input_df = pd.DataFrame({
+        "age": [age],
+        "gender": [gender],
+        "country": [country],
+        "diagnosis_date": [str(diagnosis_date)],
+        "cancer_stage": [cancer_stage],
+        "lifestyle": [lifestyle],
+        "comorbidities": [comorbidities],
+        "treatment": [treatment]
+    })
+
+    prediction = model.predict(input_df)[0]
+    st.success(f"Predicted Survival Outcome: {prediction}")
+
+

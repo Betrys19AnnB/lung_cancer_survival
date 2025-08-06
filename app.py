@@ -1,48 +1,35 @@
 import os
-import pickle
-import zipfile
-import gdown
 import pandas as pd
-from flask import Flask, request, jsonify
+import joblib
+import gdown
+from flask import Flask, request, render_template
 
-apps = Flask(__name__)
+app = Flask(__name__)
 
-MODEL_ZIP_NAME = "C:\\Users\\Lenovo\\OneDrive\\Desktop\\lung_cancer_survival\\models\\lung_cancer_model.zip"
-MODEL_FILE_NAME = "C:\\Users\\Lenovo\\OneDrive\\Desktop\\lung_cancer_survival\\models\\lung_cancer_model.pkl"
-GOOGLE_DRIVE_FILE_ID = "1k20qTxGm1ad_gZb5ev_NlKv4ZMQ6Ko2J"
+# === Load the model from Google Drive if not present ===
+model_path = "lung_cancer_model.pkl"
+gdrive_id = "1k20qTxGm1ad_gZb5ev_NlKv4ZMQ6Ko2J"
+if not os.path.exists(model_path):
+    print("Downloading model from Google Drive...")
+    gdown.download(f"https://drive.google.com/uc?id={gdrive_id}", model_path, quiet=False)
 
-# Download and extract the model if not already present
-def download_model():
-    if not os.path.exists(MODEL_FILE_NAME):
-        print("Downloading model from Google Drive...")
-        url = f"https://drive.google.com/uc?id={GOOGLE_DRIVE_FILE_ID}"
-        gdown.download(url, MODEL_ZIP_NAME, quiet=False)
-
-        print("Extracting model...")
-        with zipfile.ZipFile(MODEL_ZIP_NAME, 'r') as zip_ref:
-            zip_ref.extractall()
-        print("Model extracted.")
-
-download_model()
-
-# Load the model
-with open(MODEL_FILE_NAME, "rb") as f:
-    model = pickle.load(f)
+# === Load model ===
+model = joblib.load(model_path)
 
 @app.route('/')
-def index():
-    return "Lung Cancer Survival Prediction API is Running!"
+def home():
+    return render_template('index.html')
 
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
-        data = request.get_json()
-        input_df = pd.DataFrame([data])
-        prediction = model.predict(input_df)
-        return jsonify({"prediction": prediction.tolist()})
+        features = [float(x) for x in request.form.values()]
+        final_features = [features]
+        prediction = model.predict(final_features)
+        output = round(prediction[0], 2)
+        return render_template('index.html', prediction_text=f'Survival Prediction Score: {output}')
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return render_template('index.html', prediction_text=f'Error: {e}')
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
-

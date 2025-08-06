@@ -1,13 +1,6 @@
-setuptools>=42
-wheel
-Flask
-scikit-learn
+streamlit
 joblib
 gdown
-gunicorn
-pandas
-streamlit
-
-
+scikit-learn
 
 

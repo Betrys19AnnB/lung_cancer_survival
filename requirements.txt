@@ -6,6 +6,8 @@ joblib
 gdown
 gunicorn
 pandas
+streamlit
+
 
 
 
